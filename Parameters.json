@@ -5,6 +5,7 @@
     "BATCH_SIZE": 16,
     "NUM_WORKERS": 4,
     "MOMENTUM": 0.9,
+    "WEIGHT_DECAY": 1e-4,
     "DATASET_PATH": "./Sample Dataset",
     "WEIGHT_PATH": "./Weight/imagenet_vgg16.pth",
     "LOG_PATH": "./log.txt",
