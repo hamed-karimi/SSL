@@ -34,43 +34,43 @@ class VGGAutoEncoder(nn.Module):
 
         return x
 
-class VGG(nn.Module):
-
-    def __init__(self, configs, num_classes=1000, img_size=224, enable_bn=False):
-        super(VGG, self).__init__()
-
-        self.encoder = VGGEncoder(configs=configs, enable_bn=enable_bn)
-
-        self.img_size = img_size / 32
-
-        self.fc = nn.Sequential(
-            nn.Linear(in_features=int(self.img_size*self.img_size*512), out_features=4096),
-            nn.Dropout(p=0.5),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=4096, out_features=4096),
-            nn.Dropout(p=0.5),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_features=4096, out_features=num_classes)
-        )
-        
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.normal_(m.weight, mean=0, std=0.01)
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-            if isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, mean=0, std=0.01)
-                nn.init.constant_(m.bias, 0)
-    
-    def forward(self, x):
-
-        x = self.encoder(x)
-
-        x = torch.flatten(x, 1)
-
-        x = self.fc(x)
-
-        return x
+# class VGG(nn.Module):
+#
+#     def __init__(self, configs, num_classes=1000, img_size=224, enable_bn=False):
+#         super(VGG, self).__init__()
+#
+#         self.encoder = VGGEncoder(configs=configs, enable_bn=enable_bn)
+#
+#         self.img_size = img_size / 32
+#
+#         self.fc = nn.Sequential(
+#             nn.Linear(in_features=int(self.img_size*self.img_size*512), out_features=4096),
+#             nn.Dropout(p=0.5),
+#             nn.ReLU(inplace=True),
+#             nn.Linear(in_features=4096, out_features=4096),
+#             nn.Dropout(p=0.5),
+#             nn.ReLU(inplace=True),
+#             nn.Linear(in_features=4096, out_features=num_classes)
+#         )
+#
+#         for m in self.modules():
+#             if isinstance(m, nn.Conv2d):
+#                 nn.init.normal_(m.weight, mean=0, std=0.01)
+#                 if m.bias is not None:
+#                     nn.init.constant_(m.bias, 0)
+#             if isinstance(m, nn.Linear):
+#                 nn.init.normal_(m.weight, mean=0, std=0.01)
+#                 nn.init.constant_(m.bias, 0)
+#
+#     def forward(self, x):
+#
+#         x = self.encoder(x)
+#
+#         x = torch.flatten(x, 1)
+#
+#         x = self.fc(x)
+#
+#         return x
 
 class VGGEncoder(nn.Module):
 
