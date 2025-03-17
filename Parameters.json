@@ -1,5 +1,5 @@
 {
-    "PARALLEL": true,
+    "PARALLEL": false,
     "N_EPOCHS": 50,
     "LEARNING_RATE": 0.001,
     "BATCH_SIZE": 16,

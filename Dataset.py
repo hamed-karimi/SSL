@@ -3,6 +3,7 @@ import torch
 from PIL import Image
 import os
 import torchvision.transforms as transforms
+import numpy as np
 
 class ShapeNetMultiViewDataset(data.Dataset):
     def __init__(self, data_models_path_list, transform=None):
@@ -25,8 +26,8 @@ def generate_datasets(dataset_path='./Sample Dataset', portions=None):
     if portions is None:
         portions = {'train': .75, 'val': .15, 'test': .1}
     data_categories_path_list = [os.path.join(dataset_path, x) for x in os.listdir(dataset_path)]
-    data_models_path_list = [os.path.join(dataset_path, x, y) for x in data_categories_path_list for y in
-                                  os.listdir(x)]
+    data_models_path_list = np.array([os.path.join(x, y) for x in data_categories_path_list for y in
+                                  os.listdir(x)], dtype=object)
     train_size = int(len(data_models_path_list) * portions['train'])
     val_size = int(len(data_models_path_list) * portions['val'])
 

@@ -67,8 +67,8 @@ class Trainer:
         self.optimizer = optimizer
         self.lr = self.optimizer
         self.scheduler = scheduler
-        self.train_dataloader = train_dataloader,
-        self.val_dataloader = val_dataloader,
+        self.train_dataloader = train_dataloader
+        self.val_dataloader = val_dataloader
         self.criterion = criterion
         self.save_every = save_every
         self.print_every = print_every
@@ -129,7 +129,8 @@ class Trainer:
 
     def train(self, n_epochs):
         for epoch in range(self.epochs_run, n_epochs):
-            self.train_dataloader.sampler.set_epoch(epoch)
+            if params.PARALLEL:
+                self.train_dataloader.sampler.set_epoch(epoch)
             self._run_epoch(epoch)
             self.epochs_run += 1
 
@@ -150,30 +151,31 @@ class Trainer:
             self.writer.add_scalar("Loss/val", loss_sum / len(self.val_dataloader), self.epochs_run)
 
 
-# if __name__ == "__main__":
-#     with open('./Parameters.json', 'r') as json_file:
-#         params = json.load(json_file,
-#                            object_hook=lambda d: SimpleNamespace(**d))
-#     setup_ddp(parallel=params.PARALLEL)
-#
-#     model, optimizer, scheduler, train_dataloader, val_dataloader, criterion = prepare_training_objects(batch_size=params.BATCH_SIZE,
-#                                                                                                         n_cpus=params.NUM_WORKERS,
-#                                                                                                         n_epochs=params.N_EPOCHS,
-#                                                                                                         lr=params.LEARNING_RATE,
-#                                                                                                         momentum=params.MOMENTUM,
-#                                                                                                         weight_decay=params.WEIGHT_DECAY,
-#                                                                                                         parallel=params.PARALLEL)
-#     trainer = Trainer(model=model,
-#                       optimizer=optimizer,
-#                       scheduler=scheduler,
-#                       train_dataloader=train_dataloader,
-#                       val_dataloader=val_dataloader,
-#                       criterion=criterion,
-#                       parallel=params.PARALLEL,
-#                       save_every=1,
-#                       print_every=10,
-#                       snapshot_path='./snapshots')
-#
-#     trainer.train(n_epochs=params.N_EPOCHS)
-#     trainer.writer.close()
-#     destroy_process_group()
+if __name__ == "__main__":
+    with open('./Parameters.json', 'r') as json_file:
+        params = json.load(json_file,
+                           object_hook=lambda d: SimpleNamespace(**d))
+    if params.PARALLEL:
+        setup_ddp(parallel=params.PARALLEL)
+
+    model, optimizer, scheduler, train_dataloader, val_dataloader, criterion = prepare_training_objects(batch_size=params.BATCH_SIZE,
+                                                                                                        n_cpus=params.NUM_WORKERS,
+                                                                                                        n_epochs=params.N_EPOCHS,
+                                                                                                        lr=params.LEARNING_RATE,
+                                                                                                        momentum=params.MOMENTUM,
+                                                                                                        weight_decay=params.WEIGHT_DECAY,
+                                                                                                        parallel=params.PARALLEL)
+    trainer = Trainer(model=model,
+                      optimizer=optimizer,
+                      scheduler=scheduler,
+                      train_dataloader=train_dataloader,
+                      val_dataloader=val_dataloader,
+                      criterion=criterion,
+                      parallel=params.PARALLEL,
+                      save_every=1,
+                      print_every=10,
+                      snapshot_path='./snapshots')
+
+    trainer.train(n_epochs=params.N_EPOCHS)
+    trainer.writer.close()
+    destroy_process_group()
