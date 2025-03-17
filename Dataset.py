@@ -1,10 +1,10 @@
-import torch.utils.data as Dataset
+from torch.utils import data
 import torch
 from PIL import Image
 import os
 import torchvision.transforms as transforms
 
-class ShapeNetMultiViewDataset(Dataset):
+class ShapeNetMultiViewDataset(data.Dataset):
     def __init__(self, data_models_path_list, transform=None):
         self.data_models_path_list = data_models_path_list
         self.transform = transform
