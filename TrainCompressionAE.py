@@ -120,6 +120,7 @@ class Trainer:
 
             if i_batch % self.print_every and self.gpu_id == 0:
                 self.writer.add_scalar("Loss/train", loss_sum / (i_batch + 1), epoch * len(self.train_dataloader) + i_batch)
+                print(f"Epoch {epoch} | Batch {i_batch} / {len(self.train_dataloader)//self.train_dataloader.batch_size} | Loss {loss_sum / (i_batch + 1)}")
 
         self.scheduler.step()
 
