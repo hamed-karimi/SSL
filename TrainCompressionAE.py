@@ -104,7 +104,7 @@ class Trainer:
     def _run_epoch(self, epoch):
         self.model.train()
         loss_sum = 0.0
-        for i_batch, source, target in enumerate(self.train_dataloader):
+        for i_batch, (source, target) in enumerate(self.train_dataloader):
             source = source.to(self.gpu_id)
             target = target.to(self.gpu_id)
 

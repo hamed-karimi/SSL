@@ -26,8 +26,12 @@ def generate_datasets(dataset_path='./Sample Dataset', portions=None):
     if portions is None:
         portions = {'train': .75, 'val': .15, 'test': .1}
     data_categories_path_list = [os.path.join(dataset_path, x) for x in os.listdir(dataset_path)]
-    data_models_path_list = np.array([os.path.join(x, y) for x in data_categories_path_list for y in
+    data_models_dir_list = np.array([os.path.join(x, y) for x in data_categories_path_list for y in
                                   os.listdir(x)], dtype=object)
+    data_models_path_list = np.empty_like(data_models_dir_list, dtype=object)
+    for i in range(data_models_dir_list.shape[0]):
+        data_models_path_list[i] = os.path.join(str(data_models_dir_list[i]), 'models', '0.png')
+
     train_size = int(len(data_models_path_list) * portions['train'])
     val_size = int(len(data_models_path_list) * portions['val'])
 
