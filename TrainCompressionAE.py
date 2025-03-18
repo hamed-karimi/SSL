@@ -58,8 +58,8 @@ class Trainer:
                  snapshot_path: str):
         if parallel:
             self.gpu_id = int(os.environ['LOCAL_RANK'])
-            self.model = self.model.to(self.gpu_id)
-            self.model = DDP(model, device_ids=[self.gpu_id])
+            self.model = model.to(self.gpu_id)
+            self.model = DDP(self.model, device_ids=[self.gpu_id])
         else:
             self.gpu_id = 0
             self.model = model
