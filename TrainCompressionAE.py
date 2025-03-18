@@ -159,9 +159,9 @@ if __name__ == "__main__":
     if params.PARALLEL:
         setup_ddp(parallel=params.PARALLEL)
 
-    model, optimizer, scheduler, train_dataloader, val_dataloader, criterion = prepare_training_objects(batch_size=params.BATCH_SIZE,
-                                                                                                        n_cpus=params.NUM_WORKERS,
-                                                                                                        n_epochs=params.N_EPOCHS,
+    model, optimizer, scheduler, train_dataloader, val_dataloader, criterion = prepare_training_objects(batch_size=int(params.BATCH_SIZE),
+                                                                                                        n_cpus=int(params.NUM_WORKERS),
+                                                                                                        n_epochs=int(params.N_EPOCHS),
                                                                                                         lr=params.LEARNING_RATE,
                                                                                                         momentum=params.MOMENTUM,
                                                                                                         weight_decay=params.WEIGHT_DECAY,
