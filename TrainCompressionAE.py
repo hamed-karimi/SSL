@@ -177,6 +177,6 @@ if __name__ == "__main__":
                       print_every=10,
                       snapshot_path='./snapshots')
 
-    trainer.train(n_epochs=params.N_EPOCHS)
+    trainer.train(n_epochs=int(params.N_EPOCHS))
     trainer.writer.close()
     destroy_process_group()

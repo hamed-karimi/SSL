@@ -3,7 +3,7 @@
     "N_EPOCHS": 50,
     "LEARNING_RATE": 0.001,
     "BATCH_SIZE": 16,
-    "NUM_WORKERS": 4,
+    "NUM_WORKERS": 1,
     "MOMENTUM": 0.9,
     "WEIGHT_DECAY": 1e-4,
     "DATASET_PATH": "./Sample Dataset",
