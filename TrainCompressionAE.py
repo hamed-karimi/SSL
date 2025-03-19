@@ -55,7 +55,8 @@ class Trainer:
                  parallel: bool, 
                  save_every: int,
                  print_every: int,
-                 snapshot_path: str):
+                 snapshot_dir: str,
+                 snapshot_path: str = None,):
         if parallel:
             self.gpu_id = int(os.environ['LOCAL_RANK'])
             self.model = model.to(self.gpu_id)
@@ -73,7 +74,7 @@ class Trainer:
         self.save_every = save_every
         self.print_every = print_every
         self.epochs_run = 0
-        self.snapshot_path = snapshot_path
+        self.snapshot_dir = snapshot_dir
         self.writer = SummaryWriter()
         if os.path.exists(snapshot_path):
             print("Loading snapshot")
@@ -101,7 +102,7 @@ class Trainer:
             "optimizer": self.optimizer.state_dict(),
             "epochs_run": self.epochs_run
         }
-        torch.save(snapshot, os.path.join(self.snapshot_path, f"snapshot_{epoch}.pth"))
+        torch.save(snapshot, os.path.join(self.snapshot_dir, f"snapshot_{epoch}.pth"))
 
     def _run_epoch(self, epoch):
         self.model.train()

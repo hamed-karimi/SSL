@@ -7,7 +7,7 @@
     "MOMENTUM": 0.9,
     "WEIGHT_DECAY": 1e-4,
     "DATASET_PATH": "./Sample Dataset",
-    "SNAPSHOT_PATH": "./snapshots/snapshot.pth",
+    "SNAPSHOT_DIR": "./snapshots",
     "LOG_PATH": "./log.txt",
     "DEVICE": "cuda"
 }
