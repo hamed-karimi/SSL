@@ -1,5 +1,5 @@
 {
-    "PARALLEL": true,
+    "PARALLEL": false,
     "N_EPOCHS": 50,
     "LEARNING_RATE": 0.001,
     "BATCH_SIZE": 16,
@@ -7,7 +7,7 @@
     "MOMENTUM": 0.9,
     "WEIGHT_DECAY": 1e-4,
     "DATASET_PATH": "./Sample Dataset",
-    "WEIGHT_PATH": "./Weight/imagenet_vgg16.pth",
+    "SNAPSHOT_PATH": "./snapshots/snapshot.pth",
     "LOG_PATH": "./log.txt",
     "DEVICE": "cuda"
 }

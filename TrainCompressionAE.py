@@ -90,7 +90,9 @@ class Trainer:
                 del new_state_dict[f'module.{key}']
         
         self.model.load_state_dict(new_state_dict)
-        self.epochs_run = snapshot["epochs_run"]
+        if 'epochs_run' in snapshot.keys():
+            self.epochs_run = snapshot["epochs_run"]
+
         print(f"Resuming training from snapshot at Epoch {self.epochs_run}")
 
     def _save_snapshot(self, epoch):
@@ -118,9 +120,9 @@ class Trainer:
 
             loss_sum += loss.item()
 
-            if i_batch % self.print_every and self.gpu_id == 0:
+            if i_batch % self.print_every == 0 and self.gpu_id == 0:
                 self.writer.add_scalar("Loss/train", loss_sum / (i_batch + 1), epoch * len(self.train_dataloader) + i_batch)
-                print(f"Epoch {epoch} | Batch {i_batch} / {len(self.train_dataloader)//self.train_dataloader.batch_size} | Loss {loss_sum / (i_batch + 1)}")
+                print(f"Epoch {epoch} | Batch {i_batch} / {len(self.train_dataloader)} | Loss {loss_sum / (i_batch + 1)}")
 
         self.scheduler.step()
 
@@ -174,8 +176,8 @@ if __name__ == "__main__":
                       criterion=criterion,
                       parallel=params.PARALLEL,
                       save_every=1,
-                      print_every=10,
-                      snapshot_path='./snapshots')
+                      print_every=100,
+                      snapshot_path=params.SNAPSHOT_PATH)
 
     trainer.train(n_epochs=int(params.N_EPOCHS))
     trainer.writer.close()
