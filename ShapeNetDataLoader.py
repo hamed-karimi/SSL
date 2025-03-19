@@ -12,7 +12,7 @@ def train_loader(train_dataset, parallel, batch_size, n_cpus) -> data.DataLoader
 
     if parallel == 1:
         n_gpus = torch.cuda.device_count()
-        num_workers = n_cpus / n_gpus
+        num_workers = n_cpus // n_gpus
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)         
     else:  
         train_sampler = None
@@ -33,7 +33,7 @@ def val_loader(val_dataset, parallel, batch_size, n_cpus) -> data.DataLoader:
 
     if parallel == 1:
         n_gpus = torch.cuda.device_count()
-        num_workers = n_cpus / n_gpus
+        num_workers = n_cpus // n_gpus
         val_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=True)
     else:
         val_sampler = None
