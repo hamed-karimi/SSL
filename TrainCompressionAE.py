@@ -178,7 +178,8 @@ if __name__ == "__main__":
                       parallel=params.PARALLEL,
                       save_every=1,
                       print_every=100,
-                      snapshot_path=params.SNAPSHOT_DIR)
+                      snapshot_dir=params.SNAPSHOT_DIR,
+                      snapshot_path=os.path.join(params.SNAPSHOT_DIR, 'snapshot.pth'))
 
     trainer.train(n_epochs=int(params.N_EPOCHS))
     trainer.writer.close()
