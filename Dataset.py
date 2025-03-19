@@ -25,9 +25,9 @@ class ShapeNetMultiViewDataset(data.Dataset):
 def generate_datasets(dataset_path='./Sample Dataset', portions=None):
     if portions is None:
         portions = {'train': .75, 'val': .15, 'test': .1}
-    data_categories_path_list = [os.path.join(dataset_path, x) for x in os.listdir(dataset_path)]
+    data_categories_path_list = [os.path.join(dataset_path, x) for x in os.listdir(dataset_path) if '.' not in x]
     data_models_dir_list = np.array([os.path.join(x, y) for x in data_categories_path_list for y in
-                                  os.listdir(x)], dtype=object)
+                                  os.listdir(x) if '.' not in y], dtype=object)
     data_models_path_list = np.empty_like(data_models_dir_list, dtype=object)
     for i in range(data_models_dir_list.shape[0]):
         data_models_path_list[i] = os.path.join(str(data_models_dir_list[i]), 'models', '0.png')
