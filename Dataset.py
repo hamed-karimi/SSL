@@ -35,12 +35,13 @@ def generate_datasets(dataset_path, portions=None):
                                   os.listdir(x) if '.' not in y], dtype=object)
     data_models_path_list = [] #np.empty_like(data_models_dir_list, dtype=object)
     for i in range(data_models_dir_list.shape[0]):
+        rotation_dir = os.path.join(str(data_models_dir_list[i]), 'models', '0')
         try:
-            image_names = [name for name in os.listdir(os.path.join(str(data_models_dir_list[i]), 'models', '0')) if name.endswith('.png')]
+            image_names = [name for name in os.listdir(rotation_dir) if name.endswith('.png')]
             for image_name in image_names:
-                data_models_path_list.append(os.path.join(str(data_models_dir_list[i]), 'models', image_name))
+                data_models_path_list.append(os.path.join(rotation_dir, image_name))
         except:
-            print(os.path.join(str(data_models_dir_list[i]), 'models'), 'does not exist')
+            print(rotation_dir, 'does not exist')
             continue
     data_models_path_list = np.array(data_models_path_list, dtype=object)
     train_size = int(len(data_models_path_list) * portions['train'])
