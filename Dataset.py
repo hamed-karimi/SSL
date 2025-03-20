@@ -26,7 +26,7 @@ class ShapeNetMultiViewDataset(data.Dataset):
             target_shape_image = self.transform(target_shape_image)
         return source_shape_image, target_shape_image
     
-def generate_datasets(dataset_path='./Sample Dataset', portions=None):
+def generate_datasets(dataset_path, portions=None):
     if portions is None:
         portions = {'train': .75, 'val': .15, 'test': .1}
     print('generating datasets...')
@@ -36,7 +36,7 @@ def generate_datasets(dataset_path='./Sample Dataset', portions=None):
     data_models_path_list = [] #np.empty_like(data_models_dir_list, dtype=object)
     for i in range(data_models_dir_list.shape[0]):
         try:
-            image_names = [name for name in os.listdir(os.path.join(str(data_models_dir_list[i]), 'models')) if name.endswith('.png')]
+            image_names = [name for name in os.listdir(os.path.join(str(data_models_dir_list[i]), 'models', '0')) if name.endswith('.png')]
             for image_name in image_names:
                 data_models_path_list.append(os.path.join(str(data_models_dir_list[i]), 'models', image_name))
         except:
