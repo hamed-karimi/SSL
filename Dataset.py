@@ -33,15 +33,16 @@ def generate_datasets(dataset_path='./Sample Dataset', portions=None):
     data_categories_path_list = [os.path.join(dataset_path, x) for x in os.listdir(dataset_path) if '.' not in x]
     data_models_dir_list = np.array([os.path.join(x, y) for x in data_categories_path_list for y in
                                   os.listdir(x) if '.' not in y], dtype=object)
-    data_models_path_list = np.empty_like(data_models_dir_list, dtype=object)
+    data_models_path_list = [] #np.empty_like(data_models_dir_list, dtype=object)
     for i in range(data_models_dir_list.shape[0]):
         try:
             image_names = [name for name in os.listdir(os.path.join(str(data_models_dir_list[i]), 'models')) if name.endswith('.png')]
             for image_name in image_names:
-                data_models_path_list[i] = os.path.join(str(data_models_dir_list[i]), 'models', image_name)
+                data_models_path_list.append(os.path.join(str(data_models_dir_list[i]), 'models', image_name))
         except:
             print(os.path.join(str(data_models_dir_list[i]), 'models'), 'does not exist')
             continue
+    data_models_path_list = np.array(data_models_path_list, dtype=object)
     train_size = int(len(data_models_path_list) * portions['train'])
     val_size = int(len(data_models_path_list) * portions['val'])
     test_size = int(len(data_models_path_list) * portions['test'])
