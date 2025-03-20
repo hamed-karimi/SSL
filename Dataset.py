@@ -30,14 +30,22 @@ def generate_datasets(dataset_path='./Sample Dataset', portions=None):
                                   os.listdir(x) if '.' not in y], dtype=object)
     data_models_path_list = np.empty_like(data_models_dir_list, dtype=object)
     for i in range(data_models_dir_list.shape[0]):
-        data_models_path_list[i] = os.path.join(str(data_models_dir_list[i]), 'models', '0.png')
-
+        try:
+            image_names = [name for name in os.listdir(os.path.join(str(data_models_dir_list[i]), 'models')) if name.endswith('.png')]
+            for image_name in image_names:
+                data_models_path_list[i] = os.path.join(str(data_models_dir_list[i]), 'models', image_name)
+        except:
+            print(os.path.join(str(data_models_dir_list[i]), 'models'), 'does not exist')
+            continue
     train_size = int(len(data_models_path_list) * portions['train'])
     val_size = int(len(data_models_path_list) * portions['val'])
+    test_size = int(len(data_models_path_list) * portions['test'])
+    print('train size: ', train_size, 'val size: ', val_size, 'test size: ', test_size, '\n')
 
-    train_indices = torch.randperm(len(data_models_path_list))[:train_size]
-    val_indices = torch.randperm(len(data_models_path_list))[train_size:train_size + val_size]
-    test_indices = torch.randperm(len(data_models_path_list))[train_size + val_size:]
+    permuted_indices = torch.randperm(len(data_models_path_list))
+    train_indices = permuted_indices[:train_size]
+    val_indices = permuted_indices[train_size:train_size + val_size]
+    test_indices = permuted_indices[train_size + val_size:train_size + val_size + test_size]
 
     augmentation = [
         transforms.RandomResizedCrop(224, scale=(0.2, 1.)),
