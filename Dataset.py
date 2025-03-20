@@ -15,8 +15,12 @@ class ShapeNetMultiViewDataset(data.Dataset):
 
     def __getitem__(self, idx):
         image_path = self.data_models_path_list[idx]
-        source_shape_image = Image.open(image_path).convert('RGB')
-        target_shape_image = Image.open(image_path).convert('RGB')
+        try:
+            source_shape_image = Image.open(image_path).convert('RGB')
+            target_shape_image = Image.open(image_path).convert('RGB')
+        except:
+            print(image_path, 'does not exist')
+            return None, None
         if self.transform:
             source_shape_image = self.transform(source_shape_image)
             target_shape_image = self.transform(target_shape_image)
@@ -25,6 +29,7 @@ class ShapeNetMultiViewDataset(data.Dataset):
 def generate_datasets(dataset_path='./Sample Dataset', portions=None):
     if portions is None:
         portions = {'train': .75, 'val': .15, 'test': .1}
+    print('generating datasets...')
     data_categories_path_list = [os.path.join(dataset_path, x) for x in os.listdir(dataset_path) if '.' not in x]
     data_models_dir_list = np.array([os.path.join(x, y) for x in data_categories_path_list for y in
                                   os.listdir(x) if '.' not in y], dtype=object)
