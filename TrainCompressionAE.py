@@ -29,7 +29,8 @@ def prepare_training_objects(batch_size, n_cpus, n_epochs, lr, momentum, weight_
         momentum=momentum,
         weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=n_epochs)
-    train_dataset, val_dataset, test_dataset = generate_datasets(dataset_path=params.DATASET_PATH)
+    train_dataset, val_dataset, test_dataset = generate_datasets(dataset_path=params.DATASET_PATH,
+                                                                 portions = {'train': .5, 'val': .1, 'test': .1})
 
     train_loader = ShapeNetDataLoader.train_loader(train_dataset=train_dataset,
                                                    batch_size=batch_size,
