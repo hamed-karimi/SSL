@@ -5,6 +5,7 @@ import os
 import torchvision.transforms as transforms
 import numpy as np
 
+
 class ShapeNetMultiViewDataset(data.Dataset):
     def __init__(self, data_models_path_list, transform=None):
         self.data_models_path_list = data_models_path_list
@@ -25,51 +26,57 @@ class ShapeNetMultiViewDataset(data.Dataset):
             source_shape_image = self.transform(source_shape_image)
             target_shape_image = self.transform(target_shape_image)
         return source_shape_image, target_shape_image
-    
+
+def get_split_transforms(split_name: str):
+    assert split_name in ['train', 'val', 'test']
+    if split_name == 'train':
+        augmentation = [
+            transforms.RandomResizedCrop(224, scale=(0.2, 1.)),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+        ]
+        transform = transforms.Compose(augmentation)
+
+    else:
+        transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor()
+        ])
+    return transform
+
 def generate_datasets(dataset_path, portions=None):
     if portions is None:
-        portions = {'train': .75, 'val': .15, 'test': .1}
+        portions = {'train': .5, 'val': .15, 'test': .1}
+    step_size_dict = {'train': max(1, int(1 / portions['train'])),
+                'val': max(1, int(1 / portions['val'])),
+                'test': max(1, int(1 / portions['test']))}
+    dataset_split_file_paths = {'train': [], 'val': [], 'test': []}
+    datasets = {'train': None, 'val': None, 'test': None}
     print('generating datasets...')
     data_categories_path_list = [os.path.join(dataset_path, x) for x in os.listdir(dataset_path) if '.' not in x]
     data_models_dir_list = np.array([os.path.join(x, y) for x in data_categories_path_list for y in
                                   os.listdir(x) if '.' not in y], dtype=object)
-    data_models_path_list = [] #np.empty_like(data_models_dir_list, dtype=object)
-    for i in range(data_models_dir_list.shape[0]):
-        rotation_dir = os.path.join(str(data_models_dir_list[i]), 'models', '0')
-        try:
-            image_names = [name for name in os.listdir(rotation_dir) if name.endswith('.png')]
-            for image_name in image_names:
-                data_models_path_list.append(os.path.join(rotation_dir, image_name))
-        except:
-            print(rotation_dir, 'does not exist')
-            continue
-    data_models_path_list = np.array(data_models_path_list, dtype=object)
-    train_size = int(len(data_models_path_list) * portions['train'])
-    val_size = int(len(data_models_path_list) * portions['val'])
-    test_size = int(len(data_models_path_list) * portions['test'])
-    print('train size: ', train_size, 'val size: ', val_size, 'test size: ', test_size, '\n')
+    # data_models_path_list = [] #np.empty_like(data_models_dir_list, dtype=object)
+    for ind, split_name in enumerate(['train', 'val', 'test']):
+        step = step_size_dict[split_name]
+        for i in range(data_models_dir_list.shape[0]):
+            rotation_dir = os.path.join(str(data_models_dir_list[i]), 'models', '0')
+            try:
+                all_image_names = sorted([name for name in os.listdir(rotation_dir) if name.endswith('.png')])
+                selected_files = all_image_names[ind::step]
+                for image_name in selected_files:
+                    dataset_split_file_paths[split_name].append(os.path.join(rotation_dir, image_name))
 
-    permuted_indices = torch.randperm(len(data_models_path_list))
-    train_indices = permuted_indices[:train_size]
-    val_indices = permuted_indices[train_size:train_size + val_size]
-    test_indices = permuted_indices[train_size + val_size:train_size + val_size + test_size]
+            except:
+                print(rotation_dir, 'does not exist')
+                continue
 
-    augmentation = [
-        transforms.RandomResizedCrop(224, scale=(0.2, 1.)),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-    ]
+            # remove this before commit
+            # break
 
-    train_trans = transforms.Compose(augmentation)
-
-    val_trans = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor()
-    ])
-
-    train_dataset = ShapeNetMultiViewDataset(data_models_path_list[train_indices], transform=train_trans)
-    val_dataset = ShapeNetMultiViewDataset(data_models_path_list[val_indices], transform=val_trans)
-    test_dataset = ShapeNetMultiViewDataset(data_models_path_list[test_indices], transform=val_trans)
-
-    return train_dataset, val_dataset, test_dataset
+    for split_name in ['train', 'val', 'test']:
+        split_transform = get_split_transforms(split_name)
+        datasets[split_name] = ShapeNetMultiViewDataset(dataset_split_file_paths[split_name], transform=split_transform)
+    print('train size: ', len(datasets['train']), 'val size: ', len(datasets['val']), 'test size: ', len(datasets['test']))
+    return datasets

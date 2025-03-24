@@ -1,14 +1,17 @@
 import torch
-import torch.utils.data as data
+# import torch.utils.data as data
 import torchvision.transforms as transforms
 # from Dataset import ShapeNetMultiViewDataset
 
-def train_loader(train_dataset, parallel, batch_size, n_cpus) -> data.DataLoader:
+def remove_none_indices(batch):
+    # Filter out None values from the batch
+    batch = list(filter(lambda x: x is not None, batch))
+    if not batch:
+      return None # Return None if the whole batch is empty
+    # Use the default collate_fn for the rest of the batch
+    return torch.utils.data.dataloader.default_collate(batch)
 
-    # [NO] do not use normalize here cause it's very hard to converge
-    # [NO] do not use colorjitter cause it lead to performance drop in both train set and val set
-
-    # [?] guassian blur will lead to a significantly drop in train loss while val loss remain the same
+def get_train_loader(train_dataset, parallel, batch_size, n_cpus) -> torch.utils.data.DataLoader:
 
     if parallel == 1:
         n_gpus = torch.cuda.device_count()
@@ -25,11 +28,12 @@ def train_loader(train_dataset, parallel, batch_size, n_cpus) -> data.DataLoader
         num_workers=num_workers,
         pin_memory=True,
         sampler=train_sampler,
-        drop_last=(train_sampler is None))
+        drop_last=(train_sampler is None),
+        collate_fn=remove_none_indices)
 
     return train_dataloader
 
-def val_loader(val_dataset, parallel, batch_size, n_cpus) -> data.DataLoader:
+def get_val_loader(val_dataset, parallel, batch_size, n_cpus) -> torch.utils.data.DataLoader:
 
     if parallel == 1:
         n_gpus = torch.cuda.device_count()
@@ -45,6 +49,7 @@ def val_loader(val_dataset, parallel, batch_size, n_cpus) -> data.DataLoader:
         batch_size=batch_size,
         num_workers=num_workers,
         pin_memory=True,
-        sampler=val_sampler)
+        sampler=val_sampler,
+        collate_fn=remove_none_indices)
 
     return val_dataloader

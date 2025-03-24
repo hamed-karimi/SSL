@@ -29,15 +29,15 @@ def prepare_training_objects(batch_size, n_cpus, n_epochs, lr, momentum, weight_
         momentum=momentum,
         weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=n_epochs)
-    train_dataset, val_dataset, test_dataset = generate_datasets(dataset_path=params.DATASET_PATH,
-                                                                 portions = {'train': .5, 'val': .1, 'test': .1})
+    split_datasets_dict = generate_datasets(dataset_path=params.DATASET_PATH,
+                                            portions = {'train': .5, 'val': .1, 'test': .1})
 
-    train_loader = ShapeNetDataLoader.train_loader(train_dataset=train_dataset,
-                                                   batch_size=batch_size,
-                                                   n_cpus=n_cpus,
-                                                   parallel=parallel)
+    train_loader = ShapeNetDataLoader.get_train_loader(train_dataset=split_datasets_dict['train'],
+                                                       batch_size=batch_size,
+                                                       n_cpus=n_cpus,
+                                                       parallel=parallel)
 
-    val_loader = ShapeNetDataLoader.val_loader(val_dataset=val_dataset,
+    val_loader = ShapeNetDataLoader.get_val_loader(val_dataset=split_datasets_dict['val'],
                                                parallel=parallel,
                                                batch_size=batch_size,
                                                n_cpus=n_cpus)
@@ -60,9 +60,11 @@ class Trainer:
                  snapshot_path: str = None,):
         if parallel:
             self.gpu_id = int(os.environ['LOCAL_RANK'])
+            self.device = torch.device(f'cuda:{self.gpu_id}')
             self.model = model.to(self.gpu_id)
             self.model = DDP(self.model, device_ids=[self.gpu_id])
         else:
+            self.device = torch.device('cpu')
             self.gpu_id = 0
             self.model = model
 
@@ -82,8 +84,7 @@ class Trainer:
             self._load_snapshot(snapshot_path)
     
     def _load_snapshot(self, snapshot_path):
-        loc = f"cuda:{self.gpu_id}"
-        snapshot = torch.load(snapshot_path, map_location=loc)
+        snapshot = torch.load(snapshot_path, map_location=self.device)
         model_dict = self.model.state_dict()
         new_state_dict = deepcopy(snapshot['state_dict'])
         for key in model_dict.keys():
@@ -91,7 +92,7 @@ class Trainer:
                 new_state_dict[key] = snapshot['state_dict'][f'module.{key}']
                 del new_state_dict[f'module.{key}']
         
-        self.model.load_state_dict(new_state_dict)
+        print(self.model.load_state_dict(new_state_dict))
         if 'epochs_run' in snapshot.keys():
             self.epochs_run = snapshot["epochs_run"]
 
