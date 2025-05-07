@@ -27,6 +27,13 @@ class ShapeNetMultiViewDataset(data.Dataset):
             target_shape_image = self.transform(target_shape_image)
         return source_shape_image, target_shape_image
 
+def save_dataset(split_name: str, path_list: list):
+    path_np = np.array(path_list, dtype=object)
+    split_dir = os.path.join('Dataset Splits', split_name)
+    if not os.path.exists(split_dir):
+        os.makedirs(split_dir)
+    np.save(os.path.join(split_dir, split_name + '.npy'), path_np)
+
 def get_split_transforms(split_name: str):
     assert split_name in ['train', 'val', 'test']
     if split_name == 'train':
@@ -81,5 +88,6 @@ def generate_datasets(dataset_path, portions=None, viewpoint_portions=None):
     for split_name in ['train', 'val', 'test']:
         split_transform = get_split_transforms(split_name)
         datasets[split_name] = ShapeNetMultiViewDataset(dataset_split_file_paths[split_name], transform=split_transform)
+        save_dataset(split_name, dataset_split_file_paths[split_name])
     print('train size: ', len(datasets['train']), 'val size: ', len(datasets['val']), 'test size: ', len(datasets['test']))
     return datasets

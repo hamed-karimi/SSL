@@ -6,7 +6,7 @@
     "NUM_WORKERS": 8,
     "MOMENTUM": 0.9,
     "WEIGHT_DECAY": 1e-4,
-    "DATASET_PATH": "/mmfs1/data/karimike/SSL_Project/dataset/ShapeNet/ShapeNetCoreMultiViewDataset",
+    "DATASET_PATH": "/projects/sccn/andromeda1/karimike/SSL_Project/dataset/ShapeNet/ShapeNetCoreMultiViewDataset_A2",
     "SNAPSHOT_DIR": "./snapshots",
     "LOG_PATH": "./log.txt",
     "DEVICE": "cuda"
