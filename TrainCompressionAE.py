@@ -20,7 +20,7 @@ def setup_ddp(parallel):
     else:
         pass
 
-def prepare_training_objects(batch_size, n_cpus, n_epochs, lr, momentum, weight_decay, parallel=1):
+def prepare_training_objects(train_batch_size, val_batch_size, n_cpus, n_epochs, lr, momentum, weight_decay, parallel=1):
     configs = get_configs('vgg16')
     model = VGGAutoEncoder(configs=configs)
     optimizer = torch.optim.SGD(
@@ -33,13 +33,13 @@ def prepare_training_objects(batch_size, n_cpus, n_epochs, lr, momentum, weight_
                                             portions = {'train': .5, 'val': .1, 'test': .1})
 
     train_loader = ShapeNetDataLoader.get_train_loader(train_dataset=split_datasets_dict['train'],
-                                                       batch_size=batch_size,
+                                                       batch_size=train_batch_size,
                                                        n_cpus=n_cpus,
                                                        parallel=parallel)
 
     val_loader = ShapeNetDataLoader.get_val_loader(val_dataset=split_datasets_dict['val'],
                                                parallel=parallel,
-                                               batch_size=batch_size,
+                                               batch_size=val_batch_size,
                                                n_cpus=n_cpus)
     criterion = nn.MSELoss()
 
@@ -125,7 +125,7 @@ class Trainer:
 
             if i_batch % self.print_every == 0 and self.gpu_id == 0:
                 self.writer.add_scalar("Loss/train", loss_sum / (i_batch + 1), epoch * len(self.train_dataloader) + i_batch)
-                print(f"Epoch {epoch} | Batch {i_batch} / {len(self.train_dataloader)} | Loss {loss_sum / (i_batch + 1)}")
+                print(f"TRN Epoch {epoch} | Batch {i_batch} / {len(self.train_dataloader)} | Loss {loss_sum / (i_batch + 1)}")
 
         self.scheduler.step()
 
@@ -133,16 +133,18 @@ class Trainer:
             self._save_snapshot(epoch)
 
 
-    def train(self, n_epochs):
+    def train(self, n_epochs, do_validate=False):
         for epoch in range(self.epochs_run, n_epochs):
             if params.PARALLEL:
                 self.train_dataloader.sampler.set_epoch(epoch)
             self._run_epoch(epoch)
+            if do_validate:
+                self.validate(epoch)
             self.epochs_run += 1
 
           # syn for logging
             # torch.cuda.synchronize()
-    def validate(self):
+    def validate(self, epoch: int):
         with torch.no_grad():
             self.model.eval()
             loss_sum = 0.0
@@ -154,7 +156,10 @@ class Trainer:
                 loss = self.criterion(output, target)
                 loss_sum += loss.item()
 
-            self.writer.add_scalar("Loss/val", loss_sum / len(self.val_dataloader), self.epochs_run)
+            if i_batch % self.print_every == 0 and self.gpu_id == 0:
+                self.writer.add_scalar("Loss/val", loss_sum / len(self.val_dataloader), self.epochs_run)
+                print(f"VAL Epoch {epoch} | Batch {i_batch} / {len(self.val_dataloader)} | Loss {loss_sum / (i_batch + 1)}")
+
 
 
 if __name__ == "__main__":
@@ -164,7 +169,8 @@ if __name__ == "__main__":
     if params.PARALLEL:
         setup_ddp(parallel=params.PARALLEL)
 
-    model, optimizer, scheduler, train_dataloader, val_dataloader, criterion = prepare_training_objects(batch_size=int(params.BATCH_SIZE),
+    model, optimizer, scheduler, train_dataloader, val_dataloader, criterion = prepare_training_objects(train_batch_size=int(params.TRAIN_BATCH_SIZE),
+                                                                                                        val_batch_size=int(params.VAL_BATCH_SIZE),
                                                                                                         n_cpus=int(params.NUM_WORKERS),
                                                                                                         n_epochs=int(params.N_EPOCHS),
                                                                                                         lr=params.LEARNING_RATE,
@@ -179,10 +185,10 @@ if __name__ == "__main__":
                       criterion=criterion,
                       parallel=params.PARALLEL,
                       save_every=1,
-                      print_every=100,
+                      print_every=1000,
                       snapshot_dir=params.SNAPSHOT_DIR,
                       snapshot_path=os.path.join(params.SNAPSHOT_DIR, 'snapshot.pth'))
 
-    trainer.train(n_epochs=int(params.N_EPOCHS))
+    trainer.train(n_epochs=int(params.N_EPOCHS), do_validate=params.DO_VALIDATE)
     trainer.writer.close()
     destroy_process_group()

@@ -52,15 +52,14 @@ def get_split_transforms(split_name: str):
         ])
     return transform
 
-def generate_datasets(dataset_path, portions=None, viewpoint_portions=None):
+def generate_datasets(dataset_path, portions=None):
     if portions is None:
-        portions = {'train': .5, 'val': .15, 'test': .1}
-    if viewpoint_portions is None:
-        viewpoint_portions = {'train': .1, 'val': .1, 'test': .1}
+        # portions = {'train': .5, 'val': .15, 'test': .1}
+        portions = {'train': .1, 'val': .03, 'test': .02}
 
-    step_size_dict = {'train': max(1, int(1 / viewpoint_portions['train'])),
-                'val': max(1, int(1 / viewpoint_portions['val'])),
-                'test': max(1, int(1 / viewpoint_portions['test']))}
+    step_size_dict = {'train': max(1, int(1 / portions['train'])),
+                'val': max(1, int(1 / portions['val'])),
+                'test': max(1, int(1 / portions['test']))}
     dataset_split_file_paths = {'train': [], 'val': [], 'test': []}
     datasets = {'train': None, 'val': None, 'test': None}
     print('generating datasets...')
