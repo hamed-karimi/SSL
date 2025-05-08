@@ -187,7 +187,7 @@ if __name__ == "__main__":
                       save_every=1,
                       print_every=1000,
                       snapshot_dir=params.SNAPSHOT_DIR,
-                      snapshot_path=os.path.join(params.SNAPSHOT_DIR, 'snapshot.pth'))
+                      snapshot_path=os.path.join(params.SNAPSHOT_DIR, 'snapshot_0.pth'))
 
     trainer.train(n_epochs=int(params.N_EPOCHS), do_validate=params.DO_VALIDATE)
     trainer.writer.close()
