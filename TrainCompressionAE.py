@@ -9,18 +9,19 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed import init_process_group, destroy_process_group
 from torch.utils.tensorboard import SummaryWriter
 import ShapeNetDataLoader
-from Dataset import generate_datasets
+from Dataset import generate_datasets, load_dataset
 import json
 from types import SimpleNamespace
+import numpy as np
 
 def setup_ddp(parallel):
-    if parallel == 1:
-        torch.cuda.set_device(int(os.environ["LOCAL_RANK"]))
-        init_process_group(backend='nccl')
-    else:
-        pass
+    local_rank = int(os.environ["LOCAL_RANK"])
+    torch.cuda.set_device(local_rank)
+    init_process_group(backend='nccl')
 
-def prepare_training_objects(train_batch_size, val_batch_size, n_cpus, n_epochs, lr, momentum, weight_decay, parallel=1):
+    return local_rank
+
+def prepare_training_objects(datasets_dict, train_batch_size, val_batch_size, n_cpus, n_epochs, lr, momentum, weight_decay, parallel=1):
     configs = get_configs('vgg16')
     model = VGGAutoEncoder(configs=configs)
     optimizer = torch.optim.SGD(
@@ -29,15 +30,15 @@ def prepare_training_objects(train_batch_size, val_batch_size, n_cpus, n_epochs,
         momentum=momentum,
         weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=n_epochs)
-    split_datasets_dict = generate_datasets(dataset_path=params.DATASET_PATH,
-                                            portions = {'train': .5, 'val': .1, 'test': .1})
+    # split_datasets_dict = generate_datasets(dataset_path=params.DATASET_PATH,
+    #                                         portions = {'train': .5, 'val': .1, 'test': .1})
 
-    train_loader = ShapeNetDataLoader.get_train_loader(train_dataset=split_datasets_dict['train'],
+    train_loader = ShapeNetDataLoader.get_train_loader(train_dataset=datasets_dict['train'],
                                                        batch_size=train_batch_size,
                                                        n_cpus=n_cpus,
                                                        parallel=parallel)
 
-    val_loader = ShapeNetDataLoader.get_val_loader(val_dataset=split_datasets_dict['val'],
+    val_loader = ShapeNetDataLoader.get_val_loader(val_dataset=datasets_dict['val'],
                                                parallel=parallel,
                                                batch_size=val_batch_size,
                                                n_cpus=n_cpus)
@@ -148,7 +149,7 @@ class Trainer:
         with torch.no_grad():
             self.model.eval()
             loss_sum = 0.0
-            for i_batch, source, target in enumerate(self.val_dataloader):
+            for i_batch, (source, target) in enumerate(self.val_dataloader):
                 source = source.to(self.gpu_id)
                 target = target.to(self.gpu_id)
                 output = self.model(source)
@@ -167,9 +168,23 @@ if __name__ == "__main__":
         params = json.load(json_file,
                            object_hook=lambda d: SimpleNamespace(**d))
     if params.PARALLEL:
-        setup_ddp(parallel=params.PARALLEL)
+        rank = setup_ddp(parallel=params.PARALLEL)
+    else:
+        rank = 0
 
-    model, optimizer, scheduler, train_dataloader, val_dataloader, criterion = prepare_training_objects(train_batch_size=int(params.TRAIN_BATCH_SIZE),
+    if rank == 0:
+        datasets_dict = generate_datasets(dataset_path=params.DATASET_PATH,
+                                          portions = {'train': .5, 'val': .1, 'test': .1})
+        torch.distributed.barrier()
+
+    else:
+        torch.distributed.barrier()
+        datasets_dict = {'train': None, 'val': None, 'test': None}
+        for split_name in ['train', 'val']:
+            datasets_dict[split_name] = load_dataset(split_name=split_name)
+
+    model, optimizer, scheduler, train_dataloader, val_dataloader, criterion = prepare_training_objects(datasets_dict=datasets_dict,
+                                                                                                        train_batch_size=int(params.TRAIN_BATCH_SIZE),
                                                                                                         val_batch_size=int(params.VAL_BATCH_SIZE),
                                                                                                         n_cpus=int(params.NUM_WORKERS),
                                                                                                         n_epochs=int(params.N_EPOCHS),
