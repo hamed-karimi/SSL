@@ -97,7 +97,7 @@ class Trainer:
         if 'epochs_run' in snapshot.keys():
             self.epochs_run = snapshot["epochs_run"]
 
-        print(f"Resuming training from snapshot at Epoch {self.epochs_run}")
+        print(f"Resuming training from snapshot at Epoch {self.epochs_run+1}")
 
     def _save_snapshot(self, epoch):
         snapshot = {
@@ -174,7 +174,7 @@ if __name__ == "__main__":
 
     if rank == 0:
         datasets_dict = generate_datasets(dataset_path=params.DATASET_PATH,
-                                          portions = {'train': .5, 'val': .1, 'test': .1})
+                                          portions = {'train': .1, 'val': .03, 'test': .02})
         torch.distributed.barrier()
 
     else:
@@ -182,7 +182,7 @@ if __name__ == "__main__":
         datasets_dict = {'train': None, 'val': None, 'test': None}
         for split_name in ['train', 'val']:
             datasets_dict[split_name] = load_dataset(split_name=split_name)
-
+    print('All nodes in sync, starting training...')
     model, optimizer, scheduler, train_dataloader, val_dataloader, criterion = prepare_training_objects(datasets_dict=datasets_dict,
                                                                                                         train_batch_size=int(params.TRAIN_BATCH_SIZE),
                                                                                                         val_batch_size=int(params.VAL_BATCH_SIZE),
