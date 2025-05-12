@@ -1,8 +1,8 @@
 {
     "PARALLEL": true,
     "N_EPOCHS": 50,
-    "LEARNING_RATE": 0.001,
-    "TRAIN_BATCH_SIZE": 32,
+    "LEARNING_RATE": 0.01,
+    "TRAIN_BATCH_SIZE": 64,
     "VAL_BATCH_SIZE": 512,
     "NUM_WORKERS": 8,
     "MOMENTUM": 0.9,
