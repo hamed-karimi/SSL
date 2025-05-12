@@ -18,14 +18,12 @@ class ShapeNetMultiViewDataset(data.Dataset):
         image_path = self.data_models_path_list[idx]
         try:
             source_shape_image = Image.open(image_path).convert('RGB')
-            target_shape_image = Image.open(image_path).convert('RGB')
         except:
             print(image_path, 'does not exist')
             return None, None
         if self.transform:
             source_shape_image = self.transform(source_shape_image)
-            target_shape_image = self.transform(target_shape_image)
-        return source_shape_image, target_shape_image
+        return source_shape_image, source_shape_image
 
 def load_dataset(split_name: str):
     assert split_name in ['train', 'val', 'test']

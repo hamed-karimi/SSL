@@ -28,8 +28,8 @@ def get_train_loader(train_dataset, parallel, batch_size, n_cpus) -> torch.utils
         num_workers=num_workers,
         pin_memory=True,
         sampler=train_sampler,
-        drop_last=(train_sampler is None),
-        collate_fn=remove_none_indices)
+        drop_last=(train_sampler is None)
+    )
 
     return train_dataloader
 
@@ -50,6 +50,6 @@ def get_val_loader(val_dataset, parallel, batch_size, n_cpus) -> torch.utils.dat
         num_workers=num_workers,
         pin_memory=True,
         sampler=val_sampler,
-        collate_fn=remove_none_indices)
+    )
 
     return val_dataloader
