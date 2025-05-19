@@ -24,12 +24,16 @@ class VGGAutoEncoder(nn.Module):
 
         # VGG without Bn as AutoEncoder is hard to train
         self.encoder = VGGEncoder(configs=configs,       enable_bn=True)
+        self.encoder_transition = EncoderTransitionBlock(enable_bn=True)
+        self.decoder_transition = DecoderTransitionBlock(enable_bn=True)
         self.decoder = VGGDecoder(configs=configs[::-1], enable_bn=True)
         
     
     def forward(self, x):
 
         x = self.encoder(x)
+        x = self.encoder_transition(x)
+        x = self.decoder_transition(x)
         x = self.decoder(x)
 
         return x
@@ -90,13 +94,13 @@ class VGGDecoder(nn.Module):
 
 class EncoderBlock(nn.Module):
 
-    def __init__(self, input_dim, hidden_dim, output_dim, layers, enable_bn=False):
+    def __init__(self, input_dim, hidden_dim, output_dim, layers, enable_bn=False, padding=1):
 
         super(EncoderBlock, self).__init__()
 
         if layers == 1:
 
-            layer = EncoderLayer(input_dim=input_dim, output_dim=output_dim, enable_bn=enable_bn)
+            layer = EncoderLayer(input_dim=input_dim, output_dim=output_dim, enable_bn=enable_bn, padding=padding)
 
             self.add_module('0 EncoderLayer', layer)
 
@@ -105,11 +109,11 @@ class EncoderBlock(nn.Module):
             for i in range(layers):
 
                 if i == 0:
-                    layer = EncoderLayer(input_dim=input_dim, output_dim=hidden_dim, enable_bn=enable_bn)
+                    layer = EncoderLayer(input_dim=input_dim, output_dim=hidden_dim, enable_bn=enable_bn, padding=padding)
                 elif i == (layers - 1):
-                    layer = EncoderLayer(input_dim=hidden_dim, output_dim=output_dim, enable_bn=enable_bn)
+                    layer = EncoderLayer(input_dim=hidden_dim, output_dim=output_dim, enable_bn=enable_bn, padding=padding)
                 else:
-                    layer = EncoderLayer(input_dim=hidden_dim, output_dim=hidden_dim, enable_bn=enable_bn)
+                    layer = EncoderLayer(input_dim=hidden_dim, output_dim=hidden_dim, enable_bn=enable_bn, padding=padding)
                 
                 self.add_module('%d EncoderLayer' % i, layer)
         
@@ -127,7 +131,7 @@ class EncoderBlock(nn.Module):
 
 class DecoderBlock(nn.Module):
 
-    def __init__(self, input_dim, hidden_dim, output_dim, layers, enable_bn=False):
+    def __init__(self, input_dim, hidden_dim, output_dim, layers, enable_bn=False, padding=1):
 
         super(DecoderBlock, self).__init__()
 
@@ -146,11 +150,11 @@ class DecoderBlock(nn.Module):
             for i in range(layers):
 
                 if i == 0:
-                    layer = DecoderLayer(input_dim=input_dim, output_dim=hidden_dim, enable_bn=enable_bn)
+                    layer = DecoderLayer(input_dim=input_dim, output_dim=hidden_dim, enable_bn=enable_bn, padding=padding)
                 elif i == (layers - 1):
-                    layer = DecoderLayer(input_dim=hidden_dim, output_dim=output_dim, enable_bn=enable_bn)
+                    layer = DecoderLayer(input_dim=hidden_dim, output_dim=output_dim, enable_bn=enable_bn, padding=padding)
                 else:
-                    layer = DecoderLayer(input_dim=hidden_dim, output_dim=hidden_dim, enable_bn=enable_bn)
+                    layer = DecoderLayer(input_dim=hidden_dim, output_dim=hidden_dim, enable_bn=enable_bn, padding=padding)
                 
                 self.add_module('%d DecoderLayer' % (i+1), layer)
     
@@ -164,18 +168,18 @@ class DecoderBlock(nn.Module):
 
 class EncoderLayer(nn.Module):
 
-    def __init__(self, input_dim, output_dim, enable_bn):
+    def __init__(self, input_dim, output_dim, enable_bn, padding=1):
         super(EncoderLayer, self).__init__()
 
         if enable_bn:
             self.layer = nn.Sequential(
-                nn.Conv2d(in_channels=input_dim, out_channels=output_dim, kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(in_channels=input_dim, out_channels=output_dim, kernel_size=3, stride=1, padding=padding),
                 nn.BatchNorm2d(output_dim),
                 nn.ReLU(inplace=True),
             )
         else:
             self.layer = nn.Sequential(
-                nn.Conv2d(in_channels=input_dim, out_channels=output_dim, kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(in_channels=input_dim, out_channels=output_dim, kernel_size=3, stride=1, padding=padding),
                 nn.ReLU(inplace=True),
             )
     
@@ -185,25 +189,58 @@ class EncoderLayer(nn.Module):
 
 class DecoderLayer(nn.Module):
 
-    def __init__(self, input_dim, output_dim, enable_bn):
+    def __init__(self, input_dim, output_dim, enable_bn, padding=1):
         super(DecoderLayer, self).__init__()
 
         if enable_bn:
             self.layer = nn.Sequential(
                 nn.BatchNorm2d(input_dim),
                 nn.ReLU(inplace=True),
-                nn.Conv2d(in_channels=input_dim, out_channels=output_dim, kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(in_channels=input_dim, out_channels=output_dim, kernel_size=3, stride=1, padding=padding),
             )
         else:
             self.layer = nn.Sequential(
                 nn.ReLU(inplace=True),
-                nn.Conv2d(in_channels=input_dim, out_channels=output_dim, kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(in_channels=input_dim, out_channels=output_dim, kernel_size=3, stride=1, padding=padding),
             )
     
     def forward(self, x):
 
         return self.layer(x)
 
+class EncoderTransitionBlock(nn.Module):
+    def __init__(self, enable_bn=False):
+        super(EncoderTransitionBlock, self).__init__()
+        self.conv1 = EncoderLayer(input_dim=512, output_dim=512, enable_bn=enable_bn, padding=0)
+        self.conv2 = EncoderLayer(input_dim=512, output_dim=512, enable_bn=enable_bn, padding=0)
+        self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.maxpool(x)
+
+        return x
+
+class DecoderTransitionBlock(nn.Module):
+    def __init__(self, enable_bn=False):
+        super(DecoderTransitionBlock, self).__init__()
+        self.upsample1 = nn.ConvTranspose2d(in_channels=512, out_channels=512, kernel_size=3, stride=1)
+        self.conv1 = DecoderLayer(input_dim=512, output_dim=512, enable_bn=enable_bn)
+        self.upsample2 = nn.ConvTranspose2d(in_channels=512, out_channels=512, kernel_size=3, stride=1)
+        self.conv2 = DecoderLayer(input_dim=512, output_dim=512, enable_bn=enable_bn)
+        self.upsample3 = nn.ConvTranspose2d(in_channels=512, out_channels=512, kernel_size=3, stride=1)
+        self.conv3 = DecoderLayer(input_dim=512, output_dim=512, enable_bn=enable_bn)
+
+    def forward(self, x):
+        x = self.upsample1(x)
+        x = self.conv1(x)
+        x = self.upsample2(x)
+        x = self.conv2(x)
+        x = self.upsample3(x)
+        x = self.conv3(x)
+
+        return x
 # if __name__ == "__main__":
 
 #     input = torch.randn((5,3,224,224))

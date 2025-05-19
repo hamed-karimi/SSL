@@ -4,7 +4,7 @@ import os
 from copy import deepcopy
 # from CompressionAEModel import VGGAutoEncoder, get_configs
 import CompressionAEModel
-import SmallCompressionAEModel
+# import SmallCompressionAEModel
 # from CompressionAEModel import VGGAutoEncoder, get_configs
 import torch
 import torch.nn as nn
@@ -25,8 +25,8 @@ def setup_ddp(parallel):
     return local_rank
 
 def prepare_training_objects(datasets_dict, train_batch_size, val_batch_size, n_cpus, n_epochs, lr, momentum, weight_decay, parallel=1):
-    configs = SmallCompressionAEModel.get_configs('vgg16')
-    model = SmallCompressionAEModel.VGGAutoEncoder(configs=configs)
+    configs = CompressionAEModel.get_configs('vgg16')
+    model = CompressionAEModel.VGGAutoEncoder(configs=configs)
     optimizer = torch.optim.SGD(
         params=filter(lambda p: p.requires_grad, model.parameters()),
         lr=lr,
@@ -83,7 +83,7 @@ class Trainer:
         self.epochs_run = 0
         self.snapshot_dir = snapshot_dir
         self.writer = SummaryWriter()
-        if os.path.exists(snapshot_path):
+        if snapshot_path.endswith('.pth') and os.path.exists(snapshot_path):
             print("Loading snapshot")
             self._load_snapshot(snapshot_path)
     
@@ -92,11 +92,12 @@ class Trainer:
         model_dict = self.model.state_dict()
         new_state_dict = deepcopy(snapshot['state_dict'])
         for key in model_dict.keys():
-            if f'module.{key}' in snapshot['state_dict'].keys():
-                new_state_dict[key] = snapshot['state_dict'][f'module.{key}']
-                del new_state_dict[f'module.{key}']
+            if 'transition' not in key:
+                if f'module.{key}' in snapshot['state_dict'].keys():
+                    new_state_dict[key] = snapshot['state_dict'][f'module.{key}']
+                    del new_state_dict[f'module.{key}']
         
-        print(self.model.load_state_dict(new_state_dict))
+        print(self.model.load_state_dict(new_state_dict, strict=False))
         if 'epochs_run' in snapshot.keys():
             self.epochs_run = snapshot["epochs_run"]
 
@@ -208,7 +209,7 @@ if __name__ == "__main__":
                       save_every=1,
                       print_every=1000,
                       snapshot_dir=params.SNAPSHOT_DIR,
-                      snapshot_path=os.path.join(params.SNAPSHOT_DIR, ''))
+                      snapshot_path=os.path.join(params.SNAPSHOT_DIR, 'imagenet-vgg16.pth'))
 
     trainer.train(n_epochs=int(params.N_EPOCHS), do_validate=params.DO_VALIDATE)
     trainer.writer.close()
