@@ -60,8 +60,8 @@ def get_split_transforms(split_name: str):
 
 def generate_datasets(dataset_path, portions=None):
     if portions is None:
-        # portions = {'train': .5, 'val': .15, 'test': .1}
-        portions = {'train': .1, 'val': .03, 'test': .02}
+        portions = {'train': .5, 'val': .15, 'test': .1}
+        # portions = {'train': .1, 'val': .03, 'test': .02}
 
     step_size_dict = {'train': max(1, int(1 / portions['train'])),
                 'val': max(1, int(1 / portions['val'])),
