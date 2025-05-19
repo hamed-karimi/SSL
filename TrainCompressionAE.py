@@ -2,7 +2,10 @@
 
 import os
 from copy import deepcopy
-from CompressionAEModel import VGGAutoEncoder, get_configs
+# from CompressionAEModel import VGGAutoEncoder, get_configs
+import CompressionAEModel
+import SmallCompressionAEModel
+# from CompressionAEModel import VGGAutoEncoder, get_configs
 import torch
 import torch.nn as nn
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -22,8 +25,8 @@ def setup_ddp(parallel):
     return local_rank
 
 def prepare_training_objects(datasets_dict, train_batch_size, val_batch_size, n_cpus, n_epochs, lr, momentum, weight_decay, parallel=1):
-    configs = get_configs('vgg16')
-    model = VGGAutoEncoder(configs=configs)
+    configs = SmallCompressionAEModel.get_configs('vgg16')
+    model = SmallCompressionAEModel.VGGAutoEncoder(configs=configs)
     optimizer = torch.optim.SGD(
         params=filter(lambda p: p.requires_grad, model.parameters()),
         lr=lr,
@@ -111,8 +114,9 @@ class Trainer:
         self.model.train()
         loss_sum = 0.0
         for i_batch, (source, target) in enumerate(self.train_dataloader):
-            source = source.to(self.gpu_id)
-            target = target.to(self.gpu_id)
+            if params.PARALLEL:
+                source = source.to(self.gpu_id)
+                target = target.to(self.gpu_id)
 
             output = self.model(source)
 
@@ -175,10 +179,12 @@ if __name__ == "__main__":
     if rank == 0:
         datasets_dict = generate_datasets(dataset_path=params.DATASET_PATH,
                                           portions = {'train': .1, 'val': .03, 'test': .02})
-        torch.distributed.barrier()
+        if params.PARALLEL:
+            torch.distributed.barrier()
 
     else:
-        torch.distributed.barrier()
+        if params.PARALLEL:
+            torch.distributed.barrier()
         datasets_dict = {'train': None, 'val': None, 'test': None}
         for split_name in ['train', 'val']:
             datasets_dict[split_name] = load_dataset(split_name=split_name)
@@ -202,7 +208,7 @@ if __name__ == "__main__":
                       save_every=1,
                       print_every=1000,
                       snapshot_dir=params.SNAPSHOT_DIR,
-                      snapshot_path=os.path.join(params.SNAPSHOT_DIR, 'imagenet-vgg16.pth'))
+                      snapshot_path=os.path.join(params.SNAPSHOT_DIR, ''))
 
     trainer.train(n_epochs=int(params.N_EPOCHS), do_validate=params.DO_VALIDATE)
     trainer.writer.close()
