@@ -173,6 +173,11 @@ if __name__ == "__main__":
         params = json.load(json_file,
                            object_hook=lambda d: SimpleNamespace(**d))
     if params.PARALLEL:
+        assert params.BACKEND == 'nccl'
+    else:
+        assert params.BACKEND == 'gloo'
+
+    if params.PARALLEL:
         rank = setup_ddp(parallel=params.PARALLEL)
     else:
         rank = 0
