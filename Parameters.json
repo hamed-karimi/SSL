@@ -1,5 +1,6 @@
 {
-    "PARALLEL": false,
+    "PARALLEL": true,
+    "GPU": false,
     "BACKEND": "gloo",
     "N_EPOCHS": 50,
     "LEARNING_RATE": 0.02,

@@ -17,10 +17,11 @@ import json
 from types import SimpleNamespace
 import numpy as np
 
-def setup_ddp(parallel):
+def setup_ddp(backend):
     local_rank = int(os.environ["LOCAL_RANK"])
     torch.cuda.set_device(local_rank)
-    init_process_group(backend='nccl')
+    init_process_group(backend=backend)
+    # init_process_group(backend='nccl')
 
     return local_rank
 
@@ -57,19 +58,24 @@ class Trainer:
                  train_dataloader: torch.utils.data.DataLoader,
                  val_dataloader: torch.utils.data.DataLoader,
                  criterion: nn.Module,
-                 parallel: bool, 
+                 parallel: bool,
+                 on_gpu: bool,
                  save_every: int,
                  print_every: int,
                  snapshot_dir: str,
                  snapshot_path: str = None,):
         if parallel:
-            self.gpu_id = int(os.environ['LOCAL_RANK'])
-            self.device = torch.device(f'cuda:{self.gpu_id}')
-            self.model = model.to(self.gpu_id)
-            self.model = DDP(self.model, device_ids=[self.gpu_id])
+            self.node_id = int(os.environ['LOCAL_RANK'])
+            if on_gpu:
+                self.device = torch.device(f'cuda:{self.node_id}')
+            else:
+                self.device = torch.device('cpu')
+
+            self.model = model.to(self.device)
+            self.model = DDP(self.model, device_ids=[self.node_id])
         else:
             self.device = torch.device('cpu')
-            self.gpu_id = 0
+            self.node_id = 0
             self.model = model
 
         self.optimizer = optimizer
@@ -116,8 +122,8 @@ class Trainer:
         loss_sum = 0.0
         for i_batch, (source, target) in enumerate(self.train_dataloader):
             if params.PARALLEL:
-                source = source.to(self.gpu_id)
-                target = target.to(self.gpu_id)
+                source = source.to(self.device)
+                target = target.to(self.device)
 
             output = self.model(source)
 
@@ -129,13 +135,13 @@ class Trainer:
 
             loss_sum += loss.item()
 
-            if i_batch % self.print_every == 0 and self.gpu_id == 0:
+            if i_batch % self.print_every == 0 and self.node_id == 0:
                 self.writer.add_scalar("Loss/train", loss_sum / (i_batch + 1), epoch * len(self.train_dataloader) + i_batch)
                 print(f"TRN Epoch {epoch} | Batch {i_batch} / {len(self.train_dataloader)} | Loss {loss_sum / (i_batch + 1)}")
 
         self.scheduler.step()
 
-        if epoch % self.save_every == 0 and self.gpu_id == 0:
+        if epoch % self.save_every == 0 and self.node_id == 0:
             self._save_snapshot(epoch)
 
 
@@ -155,14 +161,14 @@ class Trainer:
             self.model.eval()
             loss_sum = 0.0
             for i_batch, (source, target) in enumerate(self.val_dataloader):
-                source = source.to(self.gpu_id)
-                target = target.to(self.gpu_id)
+                source = source.to(self.device)
+                target = target.to(self.device)
                 output = self.model(source)
 
                 loss = self.criterion(output, target)
                 loss_sum += loss.item()
 
-            if i_batch % self.print_every == 0 and self.gpu_id == 0:
+            if i_batch % self.print_every == 0 and self.node_id == 0:
                 self.writer.add_scalar("Loss/val", loss_sum / len(self.val_dataloader), self.epochs_run)
                 print(f"VAL Epoch {epoch} | Batch {i_batch} / {len(self.val_dataloader)} | Loss {loss_sum / (i_batch + 1)}")
 
@@ -172,13 +178,13 @@ if __name__ == "__main__":
     with open('./Parameters.json', 'r') as json_file:
         params = json.load(json_file,
                            object_hook=lambda d: SimpleNamespace(**d))
-    if params.PARALLEL:
+    if params.GPU:
         assert params.BACKEND == 'nccl'
     else:
         assert params.BACKEND == 'gloo'
 
     if params.PARALLEL:
-        rank = setup_ddp(parallel=params.PARALLEL)
+        rank = setup_ddp(backend=params.BACKEND)
     else:
         rank = 0
 
@@ -211,6 +217,7 @@ if __name__ == "__main__":
                       val_dataloader=val_dataloader,
                       criterion=criterion,
                       parallel=params.PARALLEL,
+                      on_gpu=params.GPU,
                       save_every=1,
                       print_every=1000,
                       snapshot_dir=params.SNAPSHOT_DIR,
