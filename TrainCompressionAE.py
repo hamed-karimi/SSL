@@ -71,11 +71,13 @@ class Trainer:
             self.node_id = int(os.environ['LOCAL_RANK'])
             if on_gpu:
                 self.device = torch.device(f'cuda:{self.node_id}')
+                device_ids = [self.node_id]
             else:
                 self.device = torch.device('cpu')
+                device_ids = None
 
             self.model = model.to(self.device)
-            self.model = DDP(self.model, device_ids=[self.node_id])
+            self.model = DDP(self.model, device_ids=device_ids)
         else:
             self.device = torch.device('cpu')
             self.node_id = 0
