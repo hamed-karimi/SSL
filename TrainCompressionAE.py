@@ -26,7 +26,7 @@ def setup_ddp(backend, on_gpu):
 
     return local_rank
 
-def prepare_training_objects(datasets_dict, train_batch_size, val_batch_size, n_cpus, n_epochs, lr, momentum, weight_decay, parallel=1):
+def prepare_training_objects(datasets_dict, train_batch_size, val_batch_size, on_gpu, n_cpus, n_epochs, lr, momentum, weight_decay, parallel=1):
     configs = CompressionAEModel.get_configs('vgg16')
     model = CompressionAEModel.VGGAutoEncoder(configs=configs)
     optimizer = torch.optim.SGD(
@@ -41,12 +41,14 @@ def prepare_training_objects(datasets_dict, train_batch_size, val_batch_size, n_
     train_loader = ShapeNetDataLoader.get_train_loader(train_dataset=datasets_dict['train'],
                                                        batch_size=train_batch_size,
                                                        n_cpus=n_cpus,
+                                                       on_gpu=on_gpu,
                                                        parallel=parallel)
 
     val_loader = ShapeNetDataLoader.get_val_loader(val_dataset=datasets_dict['val'],
-                                               parallel=parallel,
-                                               batch_size=val_batch_size,
-                                               n_cpus=n_cpus)
+                                                   parallel=parallel,
+                                                   on_gpu=on_gpu,
+                                                   batch_size=val_batch_size,
+                                                   n_cpus=n_cpus)
     criterion = nn.MSELoss()
 
     return model, optimizer, scheduler, train_loader, val_loader, criterion
@@ -206,6 +208,7 @@ if __name__ == "__main__":
                                                                                                         train_batch_size=int(params.TRAIN_BATCH_SIZE),
                                                                                                         val_batch_size=int(params.VAL_BATCH_SIZE),
                                                                                                         n_cpus=int(params.NUM_WORKERS),
+                                                                                                        on_gpu=params.GPU,
                                                                                                         n_epochs=int(params.N_EPOCHS),
                                                                                                         lr=params.LEARNING_RATE,
                                                                                                         momentum=params.MOMENTUM,
