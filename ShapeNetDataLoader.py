@@ -11,11 +11,15 @@ def remove_none_indices(batch):
     # Use the default collate_fn for the rest of the batch
     return torch.utils.data.dataloader.default_collate(batch)
 
-def get_train_loader(train_dataset, parallel, batch_size, n_cpus) -> torch.utils.data.DataLoader:
+def get_train_loader(train_dataset, parallel, on_gpu, batch_size, n_cpus) -> torch.utils.data.DataLoader:
 
     if parallel == 1:
-        n_gpus = torch.cuda.device_count()
-        num_workers = n_cpus // n_gpus
+        if on_gpu:
+            n_threads = torch.cuda.device_count()
+        else:
+            n_threads = torch.get_num_threads()
+        num_workers = n_cpus // n_threads
+
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)         
     else:  
         train_sampler = None
@@ -33,11 +37,15 @@ def get_train_loader(train_dataset, parallel, batch_size, n_cpus) -> torch.utils
 
     return train_dataloader
 
-def get_val_loader(val_dataset, parallel, batch_size, n_cpus) -> torch.utils.data.DataLoader:
+def get_val_loader(val_dataset, parallel, on_gpu, batch_size, n_cpus) -> torch.utils.data.DataLoader:
 
     if parallel == 1:
-        n_gpus = torch.cuda.device_count()
-        num_workers = n_cpus // n_gpus
+        if on_gpu:
+            n_threads = torch.cuda.device_count()
+        else:
+            n_threads = torch.get_num_threads()
+        num_workers = n_cpus // n_threads
+
         val_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=True)
     else:
         val_sampler = None

@@ -6,7 +6,7 @@
     "LEARNING_RATE": 0.02,
     "TRAIN_BATCH_SIZE": 64,
     "VAL_BATCH_SIZE": 512,
-    "NUM_WORKERS": 8,
+    "NUM_WORKERS": 64,
     "MOMENTUM": 0.9,
     "WEIGHT_DECAY": 1e-4,
     "DO_VALIDATE": false,
