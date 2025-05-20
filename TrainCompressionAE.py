@@ -17,9 +17,10 @@ import json
 from types import SimpleNamespace
 import numpy as np
 
-def setup_ddp(backend):
+def setup_ddp(backend, on_gpu):
     local_rank = int(os.environ["LOCAL_RANK"])
-    torch.cuda.set_device(local_rank)
+    if on_gpu:
+        torch.cuda.set_device(local_rank)
     init_process_group(backend=backend)
     # init_process_group(backend='nccl')
 
@@ -184,7 +185,7 @@ if __name__ == "__main__":
         assert params.BACKEND == 'gloo'
 
     if params.PARALLEL:
-        rank = setup_ddp(backend=params.BACKEND)
+        rank = setup_ddp(backend=params.BACKEND, on_gpu=params.GPU)
     else:
         rank = 0
 
