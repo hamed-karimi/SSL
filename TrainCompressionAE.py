@@ -195,7 +195,8 @@ if __name__ == "__main__":
 
     if rank == 0:
         datasets_dict = generate_datasets(dataset_path=params.DATASET_PATH,
-                                          portions = {'train': .1, 'val': .03, 'test': .02})
+                                          portions = {'train': .1, 'val': .03, 'test': .02},
+                                          use_prev_indices=params.USE_PREV_INDICES)
         if params.PARALLEL:
             torch.distributed.barrier()
 

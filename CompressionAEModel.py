@@ -211,9 +211,9 @@ class DecoderLayer(nn.Module):
 class EncoderTransitionBlock(nn.Module):
     def __init__(self, enable_bn=False):
         super(EncoderTransitionBlock, self).__init__()
-        self.conv1 = EncoderLayer(input_dim=512, output_dim=512, enable_bn=enable_bn, padding=0)
-        self.conv2 = EncoderLayer(input_dim=512, output_dim=512, enable_bn=enable_bn, padding=0)
-        self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.conv1 = EncoderLayer(input_dim=512, output_dim=256, enable_bn=enable_bn, padding=1)
+        self.conv2 = EncoderLayer(input_dim=256, output_dim=128, enable_bn=enable_bn, padding=0)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=1)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -225,20 +225,16 @@ class EncoderTransitionBlock(nn.Module):
 class DecoderTransitionBlock(nn.Module):
     def __init__(self, enable_bn=False):
         super(DecoderTransitionBlock, self).__init__()
-        self.upsample1 = nn.ConvTranspose2d(in_channels=512, out_channels=512, kernel_size=3, stride=1)
-        self.conv1 = DecoderLayer(input_dim=512, output_dim=512, enable_bn=enable_bn)
-        self.upsample2 = nn.ConvTranspose2d(in_channels=512, out_channels=512, kernel_size=3, stride=1)
+        self.upsample1 = nn.ConvTranspose2d(in_channels=128, out_channels=256, kernel_size=3, stride=1)
+        self.conv1 = DecoderLayer(input_dim=256, output_dim=256, enable_bn=enable_bn)
+        self.upsample2 = nn.ConvTranspose2d(in_channels=256, out_channels=512, kernel_size=3, stride=1)
         self.conv2 = DecoderLayer(input_dim=512, output_dim=512, enable_bn=enable_bn)
-        self.upsample3 = nn.ConvTranspose2d(in_channels=512, out_channels=512, kernel_size=3, stride=1)
-        self.conv3 = DecoderLayer(input_dim=512, output_dim=512, enable_bn=enable_bn)
 
     def forward(self, x):
         x = self.upsample1(x)
         x = self.conv1(x)
         x = self.upsample2(x)
         x = self.conv2(x)
-        x = self.upsample3(x)
-        x = self.conv3(x)
 
         return x
 # if __name__ == "__main__":

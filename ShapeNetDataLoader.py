@@ -19,7 +19,7 @@ def get_train_loader(train_dataset, parallel, on_gpu, batch_size, n_cpus) -> tor
         # else:
         #     n_threads = torch.get_num_threads()
         # num_workers = n_cpus // n_threads
-        num_workers = torch.get_num_threads()
+        # num_workers = torch.get_num_threads()
 
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)         
     else:  
