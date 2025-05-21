@@ -11,7 +11,7 @@
     "WEIGHT_DECAY": 1e-4,
     "DO_VALIDATE": false,
     "DATASET_PATH": "/projects/sccn/andromeda1/karimike/SSL_Project/dataset/ShapeNet/ShapeNetCoreMultiViewDataset_A2",
-    "USE_PREV_INDICES": false,
+    "USE_PREV_INDICES": true,
     "SNAPSHOT_DIR": "./snapshots",
     "LOG_PATH": "./log.txt",
     "DEVICE": "cuda"
