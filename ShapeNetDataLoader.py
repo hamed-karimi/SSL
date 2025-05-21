@@ -14,17 +14,19 @@ def remove_none_indices(batch):
 def get_train_loader(train_dataset, parallel, on_gpu, batch_size, n_cpus) -> torch.utils.data.DataLoader:
 
     if parallel == 1:
-        if on_gpu:
-            n_threads = torch.cuda.device_count()
-        else:
-            n_threads = torch.get_num_threads()
-        num_workers = n_cpus // n_threads
+        # if on_gpu:
+        #     n_threads = torch.cuda.device_count()
+        # else:
+        #     n_threads = torch.get_num_threads()
+        # num_workers = n_cpus // n_threads
+        num_workers = torch.get_num_threads()
 
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)         
     else:  
         train_sampler = None
-        num_workers = n_cpus
+        # num_workers = n_cpus
 
+    num_workers = torch.get_num_threads()
     train_dataloader = torch.utils.data.DataLoader(
         train_dataset,
         shuffle=(train_sampler is None),
