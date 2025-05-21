@@ -4,7 +4,7 @@
     "BACKEND": "nccl",
     "N_EPOCHS": 50,
     "LEARNING_RATE": 0.02,
-    "TRAIN_BATCH_SIZE": 32,
+    "TRAIN_BATCH_SIZE": 16,
     "VAL_BATCH_SIZE": 512,
     "NUM_WORKERS": 4,
     "MOMENTUM": 0.9,
