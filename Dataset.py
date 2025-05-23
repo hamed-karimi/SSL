@@ -17,7 +17,8 @@ class ShapeNetMultiViewDataset(data.Dataset):
     def __getitem__(self, idx):
         image_path = self.data_models_path_list[idx]
         try:
-            source_shape_image = Image.open(image_path).convert('RGB')
+            source_shape_image = Image.open(image_path) #.convert('RGB')
+            # source_mask = source_shape_image[]
         except:
             print(image_path, 'does not exist')
             return None, None

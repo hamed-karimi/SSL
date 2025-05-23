@@ -3,7 +3,7 @@
 import os
 from copy import deepcopy
 # from CompressionAEModel import VGGAutoEncoder, get_configs
-import CompressionAEModel
+from models import VGG_AE
 # import SmallCompressionAEModel
 # from CompressionAEModel import VGGAutoEncoder, get_configs
 import torch
@@ -15,7 +15,7 @@ import ShapeNetDataLoader
 from Dataset import generate_datasets, load_dataset
 import json
 from types import SimpleNamespace
-import numpy as np
+
 
 def setup_ddp(backend, on_gpu):
     local_rank = int(os.environ["LOCAL_RANK"])
@@ -27,8 +27,8 @@ def setup_ddp(backend, on_gpu):
     return local_rank
 
 def prepare_training_objects(datasets_dict, train_batch_size, val_batch_size, on_gpu, n_cpus, n_epochs, lr, momentum, weight_decay, parallel=1):
-    configs = CompressionAEModel.get_configs('vgg16')
-    model = CompressionAEModel.VGGAutoEncoder(configs=configs)
+    configs = VGG_AE.get_configs('vgg16')
+    model = VGG_AE.VGGAutoEncoder(configs=configs)
     optimizer = torch.optim.SGD(
         params=filter(lambda p: p.requires_grad, model.parameters()),
         lr=lr,
