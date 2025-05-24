@@ -24,7 +24,13 @@ class ShapeNetMultiViewDataset(data.Dataset):
             return None, None
         if self.transform:
             source_shape_image = self.transform(source_shape_image)
-        return source_shape_image, source_shape_image
+            source_shape_image_rgb = source_shape_image[:3, :, :]
+            source_shape_image_mask = source_shape_image[3:, :, :]
+        else:
+            ValueError('transform is None. Output is not Tensor')
+            source_shape_image_rgb = source_shape_image
+            source_shape_image_mask = None
+        return source_shape_image_rgb, source_shape_image_mask
 
 def load_dataset(split_name: str):
     assert split_name in ['train', 'val', 'test']
