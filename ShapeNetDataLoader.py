@@ -48,18 +48,18 @@ def get_val_loader(val_dataset, parallel, on_gpu, batch_size, n_cpus) -> torch.u
             n_threads = torch.get_num_threads()
         num_workers = n_cpus // n_threads
 
-        val_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=True)
+        # val_sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=True)
     else:
         val_sampler = None
         num_workers = n_cpus
 
     val_dataloader = torch.utils.data.DataLoader(
         val_dataset,
-        shuffle=False,
+        shuffle=True,
         batch_size=batch_size,
         num_workers=num_workers,
         pin_memory=True,
-        sampler=val_sampler,
+        sampler=None,
     )
 
     return val_dataloader
